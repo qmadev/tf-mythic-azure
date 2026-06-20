@@ -44,15 +44,15 @@ resource "random_string" "resource_code" {
   length  = 5
   special = false
   upper   = false
-  lower = false
+  lower   = false
 }
 
 resource "azurerm_storage_account" "tfstate" {
-  name                = "tfstate${random_string.resource_code.result}"
-  resource_group_name = azurerm_resource_group.tf_mythic.name
-  location            = azurerm_resource_group.tf_mythic.location
-  account_tier             = "Standard"
-  account_replication_type = "LRS"
+  name                            = "tfstate${random_string.resource_code.result}"
+  resource_group_name             = azurerm_resource_group.tf_mythic.name
+  location                        = azurerm_resource_group.tf_mythic.location
+  account_tier                    = "Standard"
+  account_replication_type        = "LRS"
   allow_nested_items_to_be_public = false
 }
 

@@ -12,10 +12,10 @@ terraform {
   }
 
   backend "azurerm" {
-    resource_group_name = "mythic"
+    resource_group_name  = "mythic"
     storage_account_name = "tfstate97159"
-    container_name = "tfstate"
-    key = "terraform.tfstate"
+    container_name       = "tfstate"
+    key                  = "terraform.tfstate"
   }
 
   required_version = "~> 1.15.0"
