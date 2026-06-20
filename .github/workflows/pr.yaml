@@ -11,13 +11,12 @@ concurrency:
 
 permissions:
   pull-requests: write
+  contents: read
 jobs:
   format:
     runs-on: "ubuntu-latest"
     steps:
     - uses: actions/checkout@v7
-      with:
-        token: ${{ github.token }}
     - uses: hashicorp/setup-terraform@v4
 
     - name: Terraform fmt
