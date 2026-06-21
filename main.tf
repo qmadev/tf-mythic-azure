@@ -1,9 +1,9 @@
 data "azurerm_resource_group" "tf_mythic" {
-  name     = "mythic"
+  name = "mythic"
 }
 
 # Create virtual network
-resource "azurerm_virtual_network" "my_terraform_network" { 
+resource "azurerm_virtual_network" "my_terraform_network" {
   name                = "myVnet"
   address_space       = ["10.0.0.0/16"]
   location            = data.azurerm_resource_group.tf_mythic.location
