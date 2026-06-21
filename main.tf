@@ -48,7 +48,7 @@ resource "azurerm_network_security_group" "my_terraform_nsg" {
 # Create network interface
 resource "azurerm_network_interface" "my_terraform_nic" {
   name                = "myNIC"
-  location            = "data.azurerm_resource_group.tf_mythic.location"
+  location            = data.azurerm_resource_group.tf_mythic.location
   resource_group_name = data.azurerm_resource_group.tf_mythic.name
 
   ip_configuration {
@@ -78,7 +78,7 @@ resource "random_id" "random_id" {
 # Create storage account for boot diagnostics
 resource "azurerm_storage_account" "my_storage_account" {
   name                     = "diag${random_id.random_id.hex}"
-  location                 = "northeurope"
+  location                 = data.azurerm_resource_group.tf_mythic.location
   resource_group_name      = data.azurerm_resource_group.tf_mythic.name
   account_tier             = "Standard"
   account_replication_type = "LRS"
@@ -87,10 +87,10 @@ resource "azurerm_storage_account" "my_storage_account" {
 # Create virtual machine
 resource "azurerm_linux_virtual_machine" "my_terraform_vm" {
   name                  = "myVM"
-  location              = "North Europe"
+  location              = data.azurerm_resource_group.tf_mythic.location
   resource_group_name   = data.azurerm_resource_group.tf_mythic.name
   network_interface_ids = [azurerm_network_interface.my_terraform_nic.id]
-  size                  = "Standard_B2s"
+  size                  = "Standard_D2als_v6"
 
   os_disk {
     name                 = "myOsDisk"
