@@ -1,12 +1,12 @@
 locals {
   projects = {
-    newtest = {
-      vm-username           = "adminuser"
-      mythic_admin_user     = "asdf"
-      mythic_admin_password = "moreasdf"
-      mythic_c2_profile     = "https://github.com/MythicC2Profiles/httpx"
-    }
-    newproject = {}
+    # newtest = {
+    #   vm-username           = "adminuser"
+    #   mythic_admin_user     = "asdf"
+    #   mythic_admin_password = "moreasdf"
+    #   mythic_c2_profile     = "https://github.com/MythicC2Profiles/httpx"
+    # }
+    # newproject = {}
   }
 }
 
