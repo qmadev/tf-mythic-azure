@@ -1,3 +1,14 @@
+locals {
+  script_vars = {
+    mythic_version        = var.mythic_version
+    mythic_admin_user     = var.mythic_admin_user
+    mythic_admin_password = var.mythic_admin_password
+    mythic_agent          = var.mythic_agent
+    mythic_c2_profile     = var.mythic_c2_profile
+  }
+}
+
+
 data "azurerm_resource_group" "tf_mythic" {
   name = "mythic"
 }
@@ -91,6 +102,7 @@ resource "azurerm_linux_virtual_machine" "my_terraform_vm" {
   resource_group_name   = data.azurerm_resource_group.tf_mythic.name
   network_interface_ids = [azurerm_network_interface.my_terraform_nic.id]
   size                  = "Standard_D2als_v6"
+  user_data             = base64encode(templatefile("./install-mythic.sh.tftpl", local.script_vars))
 
   os_disk {
     name                 = "myOsDisk"

@@ -1,0 +1,31 @@
+#!/bin/bash
+
+set -e pipefail
+
+MYTHIC_DIR=/opt/tools
+VERSION=${mythic_version}
+USER=${mythic_admin_user}
+PASSWORD=${mythic_admin_password}
+AGENT=${mythic_agent}
+C2_PROFILE=${mythic_c2_profile}
+
+apt update
+apt upgrade -y
+apt install make vim tmux -y
+
+mkdir -p "$MYTHIC_DIR"
+curl -L "https://api.github.com/repos/its-a-feature/Mythic/tarball/$VERSION" | tar -zxC "$MYTHIC_DIR"
+
+export MYTHIC_ADMIN_USER=$USER
+export MYTHIC_ADMIN_PASSWORD=$PASSWORD
+
+cd $MYTHIC_DIR/its-a-feature-Mythic-*
+
+bash install_docker_ubuntu.sh
+systemctl stop docker
+systemctl start docker
+
+make
+./mythic-cli install github "$AGENT"
+./mythic-cli install github "$C2_PROFILE"
+./mythic-cli start
