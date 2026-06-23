@@ -1,3 +1,8 @@
+
+##################################################################
+# CI/CD Service Principal
+##################################################################
+
 resource "azuread_application" "mythic_cicd" {
   display_name = "tf-mythic-github-cicd"
 }
@@ -34,10 +39,14 @@ resource "azuread_application" "mythic_cicd" {
 #
 #   subject = "repo:qmadev/tf-mythic-azure:pull_request"
 # }
-#
+
+##################################################################
+# Resource Group and Storage
+##################################################################
+
 resource "azurerm_resource_group" "tf_mythic" {
-  name     = "mythic"
-  location = "West Europe"
+  name     = var.resource_group_name
+  location = var.location
 }
 
 resource "random_string" "resource_code" {

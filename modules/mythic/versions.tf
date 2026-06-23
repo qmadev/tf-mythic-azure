@@ -18,7 +18,7 @@ terraform {
   }
 
   backend "azurerm" {
-    resource_group_name  = "mythic"
+    resource_group_name  = var.resource_group_name
     storage_account_name = "tfstate97159"
     container_name       = "tfstate"
     key                  = "terraform.tfstate"
