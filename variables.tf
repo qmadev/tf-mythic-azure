@@ -46,3 +46,9 @@ variable "mythic_c2_profile" {
   description = "The Github URL of the Mythic C2 profile to install"
   default     = "https://github.com/MythicC2Profiles/http"
 }
+
+variable "cdn_frontdoor_endpoint" {
+  type        = number
+  description = "The number of CDN endpoints to use"
+  default     = 0
+}
