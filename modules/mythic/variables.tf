@@ -42,5 +42,5 @@ variable "mythic_c2_profile" {
 variable "cdn_frontdoor_endpoint" {
   type = number
 
-  description = "The CDN endpoint to use for Mythic"
+  description = "The number of CDN endpoints to use"
 }
