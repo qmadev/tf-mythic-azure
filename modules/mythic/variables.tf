@@ -38,3 +38,9 @@ variable "mythic_c2_profile" {
   type        = string
   description = "The Github URL of the Mythic C2 profile to install"
 }
+
+variable "cdn_frontdoor_endpoint" {
+  type = number
+
+  description = "The number of CDN endpoints to use"
+}
