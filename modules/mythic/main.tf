@@ -167,3 +167,38 @@ resource "azurerm_linux_virtual_machine" "my_terraform_vm" {
     storage_account_uri = azurerm_storage_account.my_storage_account.primary_blob_endpoint
   }
 }
+
+#Create CDN Front Door Profile Endpoint
+
+resource "azurerm_cdn_frontdoor_profile" "mythic_cdn_fd_profile" {
+  name                = "CDNFrontdoorProfile"
+  resource_group_name = data.azurerm_resource_group.tf_mythic.name
+  sku_name            = "Standard_AzureFrontDoor"
+}
+
+resource "azurerm_cdn_frontdoor_origin_group" "mythic_cdn_fd_origin_group" {
+  name                     = "CDNFrontdoorOriginGroup"
+  cdn_frontdoor_profile_id = azurerm_cdn_frontdoor_profile.mythic_cdn_fd_profile.id
+
+  load_balancing{}
+}
+
+resource "azurerm_cdn_frontdoor_origin" "mythic_cdn_fd_origin"{
+  name                          = "CDNFrontdoorOrigin"
+  cdn_frontdoor_origin_group_id = azurerm_cdn_frontdoor_origin_group.mythic_cdn_fd_origin_group.id
+  enabled                       = true
+
+  certificate_name_check_enabled = false
+
+  host_name          = azurerm_public_ip.my_terraform_public_ip.ip_address
+  http_port          = 80
+  https_port         = 443
+  origin_host_header = azurerm_public_ip.my_terraform_public_ip.ip_address
+  priority           = 1
+  weight             = 1
+}
+
+resource "azurerm_cdn_frontdoor_endpoint" "cdn_frontdoor_endpoint" {
+  name                     = "CDNFrontdoorEndpoint"
+  cdn_frontdoor_profile_id = azurerm_cdn_frontdoor_profile.mythic_cdn_fd_profile.id
+}

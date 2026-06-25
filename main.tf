@@ -1,12 +1,13 @@
 locals {
   projects = {
-    # newtest = {
-    #   vm-username           = "adminuser"
-    #   mythic_admin_user     = "asdf"
-    #   mythic_admin_password = "moreasdf"
-    #   mythic_c2_profile     = "https://github.com/MythicC2Profiles/httpx"
-    # }
-    # newproject = {}
+      # newtest = {
+      #   vm-username           = "adminuser"
+      #   mythic_admin_user     = "asdf"
+      #   mythic_admin_password = "moreasdf"
+      #   mythic_c2_profile     = "https://github.com/MythicC2Profiles/httpx"
+      #   cdn_frontdoor_endpoint     = 0
+      # }
+      # newproject = {}
   }
 }
 
@@ -29,4 +30,5 @@ module "mythic" {
   mythic_admin_password = lookup(each.value, "mythic_admin_password", var.mythic_admin_password)
   mythic_agent          = lookup(each.value, "mythic_agent", var.mythic_agent)
   mythic_c2_profile     = lookup(each.value, "mythic_c2_profile", var.mythic_c2_profile)
+  cdn_frontdoor_endpoint   = lookup(each.value, "cdn_frontdoor_endpoint", var.cdn_frontdoor_endpoint)
 }
