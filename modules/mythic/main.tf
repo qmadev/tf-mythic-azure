@@ -180,10 +180,10 @@ resource "azurerm_cdn_frontdoor_origin_group" "mythic_cdn_fd_origin_group" {
   name                     = "CDNFrontdoorOriginGroup"
   cdn_frontdoor_profile_id = azurerm_cdn_frontdoor_profile.mythic_cdn_fd_profile.id
 
-  load_balancing{}
+  load_balancing {}
 }
 
-resource "azurerm_cdn_frontdoor_origin" "mythic_cdn_fd_origin"{
+resource "azurerm_cdn_frontdoor_origin" "mythic_cdn_fd_origin" {
   name                          = "CDNFrontdoorOrigin"
   cdn_frontdoor_origin_group_id = azurerm_cdn_frontdoor_origin_group.mythic_cdn_fd_origin_group.id
   enabled                       = true
