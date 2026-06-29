@@ -12,6 +12,7 @@ concurrency:
 permissions:
   pull-requests: write
   contents: read
+  id-token: write
 jobs:
   format:
     runs-on: "ubuntu-latest"
