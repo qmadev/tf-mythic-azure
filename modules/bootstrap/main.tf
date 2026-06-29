@@ -3,10 +3,11 @@
 # CI/CD Service Principal
 ##################################################################
 
-resource "azuread_application" "mythic_cicd" {
-  display_name = "tf-mythic-github-cicd"
-}
-
+# resource "azuread_application" "mythic_cicd" {
+#   display_name = "tf-mythic-cicd"
+#   owners = []
+# }
+#
 # resource "azuread_service_principal" "mythic_cicd" {
 #   client_id = azuread_application.mythic_cicd.client_id
 # }
@@ -18,27 +19,30 @@ resource "azuread_application" "mythic_cicd" {
 #   role_definition_name = "Contributor"
 #   principal_id         = azuread_service_principal.mythic_cicd.object_id
 # }
-#
-# resource "azuread_application_federated_identity_credential" "tf_mythic_github_main" {
-#   application_id = azuread_application.mythic_cicd.id
-#   display_name   = "tf-mythic-github-main"
-#
-#   audiences = ["api://AzureADTokenExchange"]
-#   issuer    = "https://token.actions.githubusercontent.com"
-#
-#   subject = "repo:qmadev/tf-mythic-azure:ref:refs/heads/main"
-# }
-#
-#
-# resource "azuread_application_federated_identity_credential" "tf_mythic_github_pr" {
-#   application_id = azuread_application.mythic_cicd.id
-#   display_name   = "tf-mythic-github-pr"
-#
-#   audiences = ["api://AzureADTokenExchange"]
-#   issuer    = "https://token.actions.githubusercontent.com"
-#
-#   subject = "repo:qmadev/tf-mythic-azure:pull_request"
-# }
+
+resource "azurerm_user_assigned_identity" "mythic_github" {
+  name = "tf-mythic-github"
+  location = var.location
+  resource_group_name = var.resource_group_name
+}
+
+resource "azurerm_federated_identity_credential" "tf_mythic_github_main" {
+  name   = "tf-mythic-github-main"
+  user_assigned_identity_id = azurerm_user_assigned_identity.mythic_github.id
+
+  audience = ["api://AzureADTokenExchange"]
+  issuer    = "https://token.actions.githubusercontent.com"
+  subject = "repo:qmadev/tf-mythic-azure:ref:refs/heads/main"
+}
+
+resource "azurerm_federated_identity_credential" "tf_mythic_github_pr" {
+  name   = "tf-mythic-github-pr"
+  user_assigned_identity_id = azurerm_user_assigned_identity.mythic_github.id
+
+  audience = ["api://AzureADTokenExchange"]
+  issuer    = "https://token.actions.githubusercontent.com"
+  subject = "repo:qmadev/tf-mythic-azure:pull_request"
+}
 
 ##################################################################
 # Resource Group and Storage
