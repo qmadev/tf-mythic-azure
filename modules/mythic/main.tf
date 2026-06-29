@@ -14,7 +14,7 @@ locals {
 
 # We should probably do this differently.
 
-data "azurerm_resource_group" "mythic" {
+data "azurerm_resource_group" "ssh" {
   name = var.resource_group
 }
 
@@ -26,8 +26,8 @@ resource "random_pet" "ssh_key_name" {
 resource "azapi_resource" "ssh_public_key" {
   type      = "Microsoft.Compute/sshPublicKeys@2022-11-01"
   name      = random_pet.ssh_key_name.id
-  location  = data.azurerm_resource_group.mythic.location
-  parent_id = data.azurerm_resource_group.mythic.id
+  location  = data.azurerm_resource_group.ssh.location
+  parent_id = data.azurerm_resource_group.ssh.id
 }
 
 resource "azapi_resource_action" "ssh_public_key_gen" {
@@ -43,39 +43,39 @@ resource "azapi_resource_action" "ssh_public_key_gen" {
 # Linux Virtual Machine 
 ##################################################################
 
-data "azurerm_resource_group" "tf_mythic" {
+data "azurerm_resource_group" "this" {
   name = var.resource_group
 }
 
 # Create virtual network
-resource "azurerm_virtual_network" "my_terraform_network" {
+resource "azurerm_virtual_network" "mythic_vm" {
   name                = "${var.project}myVnet"
   address_space       = ["10.0.0.0/16"]
-  location            = data.azurerm_resource_group.tf_mythic.location
-  resource_group_name = data.azurerm_resource_group.tf_mythic.name
+  location            = data.azurerm_resource_group.this.location
+  resource_group_name = data.azurerm_resource_group.this.name
 }
 
 # Create subnet
-resource "azurerm_subnet" "my_terraform_subnet" {
+resource "azurerm_subnet" "segmentation" {
   name                 = "${var.project}mySubnet"
-  resource_group_name  = data.azurerm_resource_group.tf_mythic.name
-  virtual_network_name = azurerm_virtual_network.my_terraform_network.name
+  resource_group_name  = data.azurerm_resource_group.this.name
+  virtual_network_name = azurerm_virtual_network.mythic_vm.name
   address_prefixes     = ["10.0.1.0/24"]
 }
 
 # Create public IPs
-resource "azurerm_public_ip" "my_terraform_public_ip" {
+resource "azurerm_public_ip" "mythic_server" {
   name                = "${var.project}myPublicIP"
-  location            = data.azurerm_resource_group.tf_mythic.location
-  resource_group_name = data.azurerm_resource_group.tf_mythic.name
+  location            = data.azurerm_resource_group.this.location
+  resource_group_name = data.azurerm_resource_group.this.name
   allocation_method   = "Static"
 }
 
 # Create Network Security Group and rule
-resource "azurerm_network_security_group" "my_terraform_nsg" {
+resource "azurerm_network_security_group" "ssh_rule" {
   name                = "${var.project}myNetworkSecurityGroup"
-  location            = data.azurerm_resource_group.tf_mythic.location
-  resource_group_name = data.azurerm_resource_group.tf_mythic.name
+  location            = data.azurerm_resource_group.this.location
+  resource_group_name = data.azurerm_resource_group.this.name
 
   security_rule {
     name                       = "SSH"
@@ -91,50 +91,50 @@ resource "azurerm_network_security_group" "my_terraform_nsg" {
 }
 
 # Create network interface
-resource "azurerm_network_interface" "my_terraform_nic" {
+resource "azurerm_network_interface" "mythic_connection" {
   name                = "${var.project}myNIC"
-  location            = data.azurerm_resource_group.tf_mythic.location
-  resource_group_name = data.azurerm_resource_group.tf_mythic.name
+  location            = data.azurerm_resource_group.this.location
+  resource_group_name = data.azurerm_resource_group.this.name
 
   ip_configuration {
     name                          = "${var.project}my_nic_configuration"
-    subnet_id                     = azurerm_subnet.my_terraform_subnet.id
+    subnet_id                     = azurerm_subnet.segmentation.id
     private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = azurerm_public_ip.my_terraform_public_ip.id
+    public_ip_address_id          = azurerm_public_ip.mythic_server.id
   }
 }
 
 # Connect the security group to the network interface
-resource "azurerm_network_interface_security_group_association" "example" {
-  network_interface_id      = azurerm_network_interface.my_terraform_nic.id
-  network_security_group_id = azurerm_network_security_group.my_terraform_nsg.id
+resource "azurerm_network_interface_security_group_association" "nic_connection" {
+  network_interface_id      = azurerm_network_interface.mythic_connection.id
+  network_security_group_id = azurerm_network_security_group.ssh_rule.id
 }
 
 # Generate random text for a unique storage account name
-resource "random_id" "random_id" {
+resource "random_id" "storage_account_id" {
   keepers = {
     # Generate a new ID only when a new resource group is defined
-    resource_group = data.azurerm_resource_group.tf_mythic.name
+    resource_group = data.azurerm_resource_group.this.name
   }
 
   byte_length = 8
 }
 
 # Create storage account for boot diagnostics
-resource "azurerm_storage_account" "my_storage_account" {
-  name                     = "diag${random_id.random_id.hex}"
-  location                 = data.azurerm_resource_group.tf_mythic.location
-  resource_group_name      = data.azurerm_resource_group.tf_mythic.name
+resource "azurerm_storage_account" "mythic_base" {
+  name                     = "diag${random_id.storage_account_id.hex}"
+  location                 = data.azurerm_resource_group.this.location
+  resource_group_name      = data.azurerm_resource_group.this.name
   account_tier             = "Standard"
   account_replication_type = "LRS"
 }
 
 # Create virtual machine
-resource "azurerm_linux_virtual_machine" "my_terraform_vm" {
+resource "azurerm_linux_virtual_machine" "mythic_platform" {
   name                  = "${var.project}-mythic"
-  location              = data.azurerm_resource_group.tf_mythic.location
-  resource_group_name   = data.azurerm_resource_group.tf_mythic.name
-  network_interface_ids = [azurerm_network_interface.my_terraform_nic.id]
+  location              = data.azurerm_resource_group.this.location
+  resource_group_name   = data.azurerm_resource_group.this.name
+  network_interface_ids = [azurerm_network_interface.mythic_connection.id]
   size                  = "Standard_D2als_v6"
   user_data             = base64encode(templatefile("${path.module}/templates/install-mythic.sh.tftpl", local.script_vars))
 
@@ -164,41 +164,41 @@ resource "azurerm_linux_virtual_machine" "my_terraform_vm" {
   }
 
   boot_diagnostics {
-    storage_account_uri = azurerm_storage_account.my_storage_account.primary_blob_endpoint
+    storage_account_uri = azurerm_storage_account.mythic_base.primary_blob_endpoint
   }
 }
 
 #Create CDN Front Door Profile Endpoint
 
-resource "azurerm_cdn_frontdoor_profile" "mythic_cdn_fd_profile" {
+resource "azurerm_cdn_frontdoor_profile" "mythic_profile" {
   name                = "CDNFrontdoorProfile"
-  resource_group_name = data.azurerm_resource_group.tf_mythic.name
+  resource_group_name = data.azurerm_resource_group.this.name
   sku_name            = "Standard_AzureFrontDoor"
 }
 
-resource "azurerm_cdn_frontdoor_origin_group" "mythic_cdn_fd_origin_group" {
+resource "azurerm_cdn_frontdoor_origin_group" "backend_pool" {
   name                     = "CDNFrontdoorOriginGroup"
-  cdn_frontdoor_profile_id = azurerm_cdn_frontdoor_profile.mythic_cdn_fd_profile.id
+  cdn_frontdoor_profile_id = azurerm_cdn_frontdoor_profile.mythic_profile.id
 
   load_balancing {}
 }
 
-resource "azurerm_cdn_frontdoor_origin" "mythic_cdn_fd_origin" {
+resource "azurerm_cdn_frontdoor_origin" "backend_routing" {
   name                          = "CDNFrontdoorOrigin"
-  cdn_frontdoor_origin_group_id = azurerm_cdn_frontdoor_origin_group.mythic_cdn_fd_origin_group.id
+  cdn_frontdoor_origin_group_id = azurerm_cdn_frontdoor_origin_group.backend_pool.id
   enabled                       = true
 
   certificate_name_check_enabled = false
 
-  host_name          = azurerm_public_ip.my_terraform_public_ip.ip_address
+  host_name          = azurerm_public_ip.mythic_server.ip_address
   http_port          = 80
   https_port         = 443
-  origin_host_header = azurerm_public_ip.my_terraform_public_ip.ip_address
+  origin_host_header = azurerm_public_ip.mythic_server.ip_address
   priority           = 1
   weight             = 1
 }
 
-resource "azurerm_cdn_frontdoor_endpoint" "cdn_frontdoor_endpoint" {
+resource "azurerm_cdn_frontdoor_endpoint" "mythic_endpoint" {
   name                     = "CDNFrontdoorEndpoint"
-  cdn_frontdoor_profile_id = azurerm_cdn_frontdoor_profile.mythic_cdn_fd_profile.id
+  cdn_frontdoor_profile_id = azurerm_cdn_frontdoor_profile.mythic_profile.id
 }
