@@ -1,5 +1,15 @@
 terraform {
   required_providers {
+    tls = {
+      source  = "hashicorp/tls"
+      version = "~>4.3.0"
+    }
+
+    random = {
+      source  = "hashicorp/random"
+      version = "~>3.9.0"
+    }
+
     azurerm = {
       source  = "hashicorp/azurerm"
       version = "~>4.78.0"
@@ -9,12 +19,6 @@ terraform {
       source  = "hashicorp/azuread"
       version = "~>3.9.0"
     }
-
-    azapi = {
-      source  = "azure/azapi"
-      version = ">=2.10.0"
-    }
-
   }
 
   backend "azurerm" {
