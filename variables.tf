@@ -28,13 +28,6 @@ variable "mythic_admin_user" {
   default     = "mythic_admin"
 }
 
-variable "mythic_admin_password" {
-  type        = string
-  sensitive   = true
-  description = "The password of the Mythic admin account"
-  default     = "asdfasdfasdf"
-}
-
 variable "mythic_agent" {
   type        = string
   description = "The Github URL of the Mythic C2 agent to install"
@@ -47,8 +40,13 @@ variable "mythic_c2_profile" {
   default     = "https://github.com/MythicC2Profiles/http"
 }
 
-variable "cdn_frontdoor_endpoint" {
+variable "cdn_frontdoor_endpoints" {
   type        = number
   description = "The number of CDN endpoints to use"
   default     = 0
+}
+
+variable "key_vault_object_id" {
+  type        = string
+  description = "The object id of the user/group that should get access to the Key Vault"
 }

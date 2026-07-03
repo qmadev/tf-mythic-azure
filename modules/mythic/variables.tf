@@ -1,6 +1,16 @@
-variable "resource_group" {
+variable "resource_group_name" {
   type        = string
-  description = "The resource group to use"
+  description = "The name of the resource group to use"
+}
+
+variable "resource_group_location" {
+  type        = string
+  description = "The location of the resource group to use"
+}
+
+variable "azure_key_vault_id" {
+  type        = string
+  description = "The id of the key vault to use"
 }
 
 variable "project" {
@@ -23,12 +33,6 @@ variable "mythic_admin_user" {
   description = "The username of the Mythic admin account"
 }
 
-variable "mythic_admin_password" {
-  type        = string
-  sensitive   = true
-  description = "The password of the Mythic admin account"
-}
-
 variable "mythic_agent" {
   type        = string
   description = "The Github URL of the Mythic C2 agent to install"
@@ -39,8 +43,7 @@ variable "mythic_c2_profile" {
   description = "The Github URL of the Mythic C2 profile to install"
 }
 
-variable "cdn_frontdoor_endpoint" {
-  type = number
-
+variable "cdn_frontdoor_endpoints" {
+  type        = number
   description = "The number of CDN endpoints to use"
 }

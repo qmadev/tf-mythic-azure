@@ -1,45 +1,3 @@
-
-##################################################################
-# CI/CD Service Principal
-##################################################################
-
-resource "azuread_application" "mythic_cicd" {
-  display_name = "tf-mythic-github-cicd"
-}
-
-# resource "azuread_service_principal" "mythic_cicd" {
-#   client_id = azuread_application.mythic_cicd.client_id
-# }
-#
-# data "azurerm_subscription" "current" {}
-#
-# resource "azurerm_role_assignment" "mythic_cicd" {
-#   scope                = data.azurerm_subscription.current.id
-#   role_definition_name = "Contributor"
-#   principal_id         = azuread_service_principal.mythic_cicd.object_id
-# }
-#
-# resource "azuread_application_federated_identity_credential" "tf_mythic_github_main" {
-#   application_id = azuread_application.mythic_cicd.id
-#   display_name   = "tf-mythic-github-main"
-#
-#   audiences = ["api://AzureADTokenExchange"]
-#   issuer    = "https://token.actions.githubusercontent.com"
-#
-#   subject = "repo:qmadev/tf-mythic-azure:ref:refs/heads/main"
-# }
-#
-#
-# resource "azuread_application_federated_identity_credential" "tf_mythic_github_pr" {
-#   application_id = azuread_application.mythic_cicd.id
-#   display_name   = "tf-mythic-github-pr"
-#
-#   audiences = ["api://AzureADTokenExchange"]
-#   issuer    = "https://token.actions.githubusercontent.com"
-#
-#   subject = "repo:qmadev/tf-mythic-azure:pull_request"
-# }
-
 ##################################################################
 # Resource Group and Storage
 ##################################################################
@@ -71,3 +29,8 @@ resource "azurerm_storage_container" "tfstate" {
   container_access_type = "private"
 }
 
+resource "azurerm_storage_encryption_scope" "tfstate" {
+  name               = "tfstate"
+  storage_account_id = azurerm_storage_account.tfstate.id
+  source             = "Microsoft.Storage"
+}

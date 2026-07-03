@@ -2,80 +2,70 @@ locals {
   script_vars = {
     mythic_version        = var.mythic_version
     mythic_admin_user     = var.mythic_admin_user
-    mythic_admin_password = var.mythic_admin_password
+    mythic_admin_password = random_password.mythic.result
     mythic_agent          = var.mythic_agent
     mythic_c2_profile     = var.mythic_c2_profile
   }
 }
 
 ##################################################################
-# SSH 
+# SSH key and password
 ##################################################################
 
-# We should probably do this differently.
-
-data "azurerm_resource_group" "ssh" {
-  name = var.resource_group
+resource "random_password" "mythic" {
+  length  = 20
+  special = false
 }
 
-resource "random_pet" "ssh_key_name" {
-  prefix    = "ssh"
-  separator = ""
+resource "tls_private_key" "ed25519" {
+  algorithm = "ED25519"
 }
 
-resource "azapi_resource" "ssh_public_key" {
-  type      = "Microsoft.Compute/sshPublicKeys@2022-11-01"
-  name      = random_pet.ssh_key_name.id
-  location  = data.azurerm_resource_group.ssh.location
-  parent_id = data.azurerm_resource_group.ssh.id
+# Store SSH private key and Mythic password in Azure Key Vault
+resource "azurerm_key_vault_secret" "ssh_key" {
+  name         = "${var.project}-sshkey"
+  value        = tls_private_key.ed25519.private_key_openssh
+  key_vault_id = var.azure_key_vault_id
 }
 
-resource "azapi_resource_action" "ssh_public_key_gen" {
-  type        = "Microsoft.Compute/sshPublicKeys@2022-11-01"
-  resource_id = azapi_resource.ssh_public_key.id
-  action      = "generateKeyPair"
-  method      = "POST"
-
-  response_export_values = ["publicKey", "privateKey"]
+resource "azurerm_key_vault_secret" "mythic_password" {
+  name         = "${var.project}-mythic-admin"
+  value        = random_password.mythic.result
+  key_vault_id = var.azure_key_vault_id
 }
 
 ##################################################################
 # Linux Virtual Machine 
 ##################################################################
 
-data "azurerm_resource_group" "this" {
-  name = var.resource_group
-}
-
-# Create virtual network
 resource "azurerm_virtual_network" "mythic_vm" {
-  name                = "${var.project}myVnet"
+  name                = var.project
   address_space       = ["10.0.0.0/16"]
-  location            = data.azurerm_resource_group.this.location
-  resource_group_name = data.azurerm_resource_group.this.name
+  location            = var.resource_group_location
+  resource_group_name = var.resource_group_name
 }
 
 # Create subnet
 resource "azurerm_subnet" "segmentation" {
-  name                 = "${var.project}mySubnet"
-  resource_group_name  = data.azurerm_resource_group.this.name
+  name                 = var.project
+  resource_group_name  = var.resource_group_name
   virtual_network_name = azurerm_virtual_network.mythic_vm.name
   address_prefixes     = ["10.0.1.0/24"]
 }
 
 # Create public IPs
 resource "azurerm_public_ip" "mythic_server" {
-  name                = "${var.project}myPublicIP"
-  location            = data.azurerm_resource_group.this.location
-  resource_group_name = data.azurerm_resource_group.this.name
+  name                = var.project
+  location            = var.resource_group_location
+  resource_group_name = var.resource_group_name
   allocation_method   = "Static"
 }
 
 # Create Network Security Group and rule
 resource "azurerm_network_security_group" "ssh_rule" {
-  name                = "${var.project}myNetworkSecurityGroup"
-  location            = data.azurerm_resource_group.this.location
-  resource_group_name = data.azurerm_resource_group.this.name
+  name                = var.project
+  location            = var.resource_group_location
+  resource_group_name = var.resource_group_name
 
   security_rule {
     name                       = "SSH"
@@ -92,12 +82,12 @@ resource "azurerm_network_security_group" "ssh_rule" {
 
 # Create network interface
 resource "azurerm_network_interface" "mythic_connection" {
-  name                = "${var.project}myNIC"
-  location            = data.azurerm_resource_group.this.location
-  resource_group_name = data.azurerm_resource_group.this.name
+  name                = var.project
+  location            = var.resource_group_location
+  resource_group_name = var.resource_group_name
 
   ip_configuration {
-    name                          = "${var.project}my_nic_configuration"
+    name                          = var.project
     subnet_id                     = azurerm_subnet.segmentation.id
     private_ip_address_allocation = "Dynamic"
     public_ip_address_id          = azurerm_public_ip.mythic_server.id
@@ -114,7 +104,7 @@ resource "azurerm_network_interface_security_group_association" "nic_connection"
 resource "random_id" "storage_account_id" {
   keepers = {
     # Generate a new ID only when a new resource group is defined
-    resource_group = data.azurerm_resource_group.this.name
+    resource_group = var.resource_group_name
   }
 
   byte_length = 8
@@ -123,8 +113,8 @@ resource "random_id" "storage_account_id" {
 # Create storage account for boot diagnostics
 resource "azurerm_storage_account" "mythic_base" {
   name                     = "diag${random_id.storage_account_id.hex}"
-  location                 = data.azurerm_resource_group.this.location
-  resource_group_name      = data.azurerm_resource_group.this.name
+  location                 = var.resource_group_location
+  resource_group_name      = var.resource_group_name
   account_tier             = "Standard"
   account_replication_type = "LRS"
 }
@@ -132,8 +122,8 @@ resource "azurerm_storage_account" "mythic_base" {
 # Create virtual machine
 resource "azurerm_linux_virtual_machine" "mythic_platform" {
   name                  = "${var.project}-mythic"
-  location              = data.azurerm_resource_group.this.location
-  resource_group_name   = data.azurerm_resource_group.this.name
+  location              = var.resource_group_location
+  resource_group_name   = var.resource_group_name
   network_interface_ids = [azurerm_network_interface.mythic_connection.id]
   size                  = "Standard_D2als_v6"
   user_data             = base64encode(templatefile("${path.module}/templates/install-mythic.sh.tftpl", local.script_vars))
@@ -143,7 +133,7 @@ resource "azurerm_linux_virtual_machine" "mythic_platform" {
   }
 
   os_disk {
-    name                 = "${var.project}myOsDisk"
+    name                 = "${var.project}OSDisk"
     caching              = "ReadWrite"
     storage_account_type = "Standard_LRS"
   }
@@ -160,7 +150,7 @@ resource "azurerm_linux_virtual_machine" "mythic_platform" {
 
   admin_ssh_key {
     username   = var.vm-username
-    public_key = azapi_resource_action.ssh_public_key_gen.output.publicKey
+    public_key = tls_private_key.ed25519.public_key_openssh
   }
 
   boot_diagnostics {
@@ -168,37 +158,44 @@ resource "azurerm_linux_virtual_machine" "mythic_platform" {
   }
 }
 
-#Create CDN Front Door Profile Endpoint
+##################################################################
+# Azure FrontDoor CDN
+##################################################################
 
 resource "azurerm_cdn_frontdoor_profile" "mythic_profile" {
-  name                = "CDNFrontdoorProfile"
-  resource_group_name = data.azurerm_resource_group.this.name
+  count = var.cdn_frontdoor_endpoints > 1 ? 1 : 0
+
+  name                = "MythicRedirector"
+  resource_group_name = var.resource_group_name
   sku_name            = "Standard_AzureFrontDoor"
 }
 
 resource "azurerm_cdn_frontdoor_origin_group" "backend_pool" {
-  name                     = "CDNFrontdoorOriginGroup"
-  cdn_frontdoor_profile_id = azurerm_cdn_frontdoor_profile.mythic_profile.id
+  count = var.cdn_frontdoor_endpoints > 1 ? 1 : 0
+
+  name                     = "MythicRedirector"
+  cdn_frontdoor_profile_id = azurerm_cdn_frontdoor_profile.mythic_profile[*].id
 
   load_balancing {}
 }
 
 resource "azurerm_cdn_frontdoor_origin" "backend_routing" {
-  name                          = "CDNFrontdoorOrigin"
-  cdn_frontdoor_origin_group_id = azurerm_cdn_frontdoor_origin_group.backend_pool.id
-  enabled                       = true
+  count = var.cdn_frontdoor_endpoints > 1 ? 1 : 0
 
-  certificate_name_check_enabled = false
-
-  host_name          = azurerm_public_ip.mythic_server.ip_address
-  http_port          = 80
-  https_port         = 443
-  origin_host_header = azurerm_public_ip.mythic_server.ip_address
-  priority           = 1
-  weight             = 1
+  name                           = "MythicRedirector"
+  cdn_frontdoor_origin_group_id  = azurerm_cdn_frontdoor_origin_group.backend_pool[*].id
+  enabled                        = true
+  certificate_name_check_enabled = true
+  host_name                      = azurerm_public_ip.mythic_server.ip_address
+  http_port                      = 80
+  https_port                     = 443
+  origin_host_header             = azurerm_public_ip.mythic_server.ip_address
+  priority                       = 1
+  weight                         = 1
 }
 
 resource "azurerm_cdn_frontdoor_endpoint" "mythic_endpoint" {
-  name                     = "CDNFrontdoorEndpoint"
-  cdn_frontdoor_profile_id = azurerm_cdn_frontdoor_profile.mythic_profile.id
+  count                    = var.cdn_frontdoor_endpoints
+  name                     = "MythicServer"
+  cdn_frontdoor_profile_id = azurerm_cdn_frontdoor_profile.mythic_profile[*].id
 }
