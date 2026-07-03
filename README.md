@@ -1,6 +1,6 @@
 # Terraforming Mythic
 
-This project allows operators to set up multiple Mythic C2 servers in Azure. Optionally, Azure CDN redirectors can be created as well.
+This project allows operators to set up multiple Mythic C2 servers in Azure. Optionally, Azure CDN redirectors can be created as well. The idea is that you are able to create multiple "projects" that you can manage from this Terraform code. This way, operators can manage the resources for their infrastructure in a central place, as code. 
 
 ## Usage
 
@@ -15,7 +15,6 @@ locals {
       vm-username             = "adminuser"
       mythic_version          = "v3.2.2"
       mythic_admin_user       = "asdf"
-      mythic_admin_password   = "moreasdf"
       mythic_c2_profile       = "https://github.com/MythicC2Profiles/httpx"
       mythic_agent            = "https://github.com/MythicAgents/Xenon"
       cdn_frontdoor_endpoints = 2
