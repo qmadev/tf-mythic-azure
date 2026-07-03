@@ -5,7 +5,6 @@ locals {
     #   vm-username             = "adminuser"
     #   mythic_version          = "v3.2.2"
     #   mythic_admin_user       = "asdf"
-    #   mythic_admin_password   = "moreasdf"
     #   mythic_c2_profile       = "https://github.com/MythicC2Profiles/httpx"
     #   mythic_agent            = "https://github.com/MythicAgents/Xenon"
     #   cdn_frontdoor_endpoints = 2
